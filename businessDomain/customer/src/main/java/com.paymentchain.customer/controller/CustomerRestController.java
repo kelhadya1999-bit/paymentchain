@@ -8,17 +8,19 @@ import com.paymentchain.customer.entities.CustomerProduct;
 import com.paymentchain.customer.entities.TransactionDTO;
 import com.paymentchain.customer.entities.productDTO;
 import io.netty.channel.ChannelOption;
-import io.netty.handler.codec.quic.EpollQuicUtils;
+//import io.netty.handler.codec.quic.EpollQuicUtils;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+//import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
-//import org.springframework.core.env.Environment;
+
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,15 +33,21 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/customer")
 public class CustomerRestController {
 
-    @Autowired
-    CustomerRepository customerRepository;
 
-    //esto sirve para llamar a otros microservicios dentro de la app
+    private final CustomerRepository customerRepository;
     private final WebClient.Builder webClientBuilder;
-    public CustomerRestController(WebClient.Builder webClientBuilder) {
 
+    private final Environment env;
+
+    public CustomerRestController(CustomerRepository customerRepository,
+                                  WebClient.Builder webClientBuilder,
+                                  Environment env) {
+        this.customerRepository = customerRepository;
         this.webClientBuilder = webClientBuilder;
+        this.env = env;
+        System.out.println(">>> Constructor CustomerRestController");
     }
+
     //configuración del time out
     HttpClient client = HttpClient.create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
@@ -49,16 +57,18 @@ public class CustomerRestController {
                 conn.addHandlerLast( new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
                 conn.addHandlerLast( new WriteTimeoutHandler(5000, TimeUnit.MILLISECONDS));
             });
-    //@Autowired
-    //private Enviroment env;
-    //@GetMapping("/check")
-    //public String check() {
-        //return "Hello your propiety value is:" + env.getProperty("custom.activeprofileName")
-    //}
+
     //los parámetros de webclient se definen en unaclase própia
     @GetMapping
     public List<Customer> FindAll() {
         return (List<Customer>) customerRepository.findAll();
+    }
+    //private Environment env;
+    @GetMapping("/check")
+    public String check(){
+        return "app=" + env.getProperty("spring.application.name")
+                + ", profile=" + env.getProperty("custom.activeProfileName")
+                + ", port=" + env.getProperty("server.port");
     }
 
     @GetMapping("/{id}")
