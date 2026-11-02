@@ -12,6 +12,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 //import org.springframework.core.env.Environment;
+import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -32,20 +34,17 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/customer")
 public class CustomerRestController {
-
-
     private final CustomerRepository customerRepository;
-    private final WebClient.Builder webClientBuilder;
-
+    private final WebClient.Builder webClientBuilder; // el bean @LoadBalanced de CustomerApplication
     private final Environment env;
 
+    // Un solo constructor: Spring inyecta todo sin necesidad de @Autowired
     public CustomerRestController(CustomerRepository customerRepository,
-                                  WebClient.Builder webClientBuilder,
+                                  @Qualifier("getWebClientBuilder") WebClient.Builder webClientBuilder,
                                   Environment env) {
         this.customerRepository = customerRepository;
         this.webClientBuilder = webClientBuilder;
         this.env = env;
-        System.out.println(">>> Constructor CustomerRestController");
     }
 
     //configuración del time out
@@ -72,7 +71,7 @@ public class CustomerRestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> FindOne(@PathVariable long id) {
+    public ResponseEntity<?> FindOne(@PathVariable (name="id") long id) {
         Optional<Customer> customer = customerRepository.findById(id);
         if (customer.isPresent()) {
             return ResponseEntity.ok().body(customer.get());
@@ -82,7 +81,7 @@ public class CustomerRestController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> put(@PathVariable long id, @RequestBody Customer input) {
+    public ResponseEntity<?> put(@PathVariable (name="id") long id, @RequestBody Customer input) {
         Optional<Customer> customer1 = customerRepository.findById(id);
         if (customer1.isPresent()) {
             Customer newCustomer = customer1.get();
@@ -111,7 +110,7 @@ public class CustomerRestController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable long id) {
+    public ResponseEntity<?> delete(@PathVariable (name="id") long id) {
         Optional<Customer> customer = customerRepository.findById(id);
         if (customer.isPresent()) {
             customerRepository.deleteById(id);
@@ -120,27 +119,21 @@ public class CustomerRestController {
     }
 
     @GetMapping("/full")
-    public Customer getByCode(@RequestParam String code) {
-        //Traigo el cliente de la BD
-        Customer customer = customerRepository.getByCode(code);
+    public Customer getById(@RequestParam(name = "id") long id) {
+        // Traigo el cliente de la BD por su id
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Customer with id " + id + " not found"));
 
-        if (customer == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Customer with code " + code + " not found"
-            );
-        }
-       // Obtengo los productos del cliente
+        // Producto de cada línea del cliente
         List<CustomerProduct> products = customer.getProducts();
-        //por cada producto tomo el productID y llamo al miroservicio Product usando webclient
-        products.forEach(cp -> {
-            String productName = getProductName(cp.getProductId());
-            cp.setProductName(productName);
-        });
+        if (products != null) {
+            products.forEach(cp -> cp.setProductName(getProductName(cp.getProductId())));
+        }
 
-        //obtener las transacciones del cliente
-        List<?> transactions = getTransactions(customer.getIban());
-        customer.setTransactions(transactions);
+        // Transacciones del cliente
+        customer.setTransactions(getTransactions(customer.getIban()));
         return customer;
     }
 
@@ -148,9 +141,9 @@ public class CustomerRestController {
     private String getProductName (long id) {
         //crear la url para acceder a los productos del cliente
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://localhost:8082/Product")
+                .baseUrl("http://BUISNESSDOMAIN-PRODUCT/Product")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url","http://localhost:8082/Product"))
+                .defaultUriVariables(Collections.singletonMap("url","http://BUISNESSDOMAIN-PRODUCT/Product"))
                 .build();
 
         //poder acceder a la url del producte con su id y devuelva el json con la info
@@ -160,15 +153,16 @@ public class CustomerRestController {
                 .uri("/{id}", id)
                 .retrieve()
                 .bodyToMono(productDTO.class)
+                .onErrorResume(e -> reactor.core.publisher.Mono.empty())
                 .block();
 
         return product != null ? product.getName() : null;
     }
     private List<?> getTransactions(String iban){
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://localhost:8083/transaction")
+                .baseUrl("http://BUISNESSDOMAIN-TRANSACTION/transaction")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url","http://localhost:8083/transaction"))
+                .defaultUriVariables(Collections.singletonMap("url","http://BUISNESSDOMAIN-TRANSACTION/transaction"))
                 .build();
 
 

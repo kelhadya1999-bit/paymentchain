@@ -20,6 +20,8 @@
 
     <modules>
         <module>configserver</module>
+        <module>eurekaServer</module>
+        <module>springBootAdmin</module>
     </modules>
 
     <properties>

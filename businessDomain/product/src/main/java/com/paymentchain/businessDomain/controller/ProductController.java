@@ -23,7 +23,7 @@ public class ProductController {
     }
     //obtener producto por ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id){
+    public ResponseEntity<?> findById(@PathVariable (name="id") long id){
         Optional<Product> OptionalProduct = productRepository.findById(id);
         if(OptionalProduct.isPresent()){
             return new ResponseEntity<>(OptionalProduct.get(), HttpStatus.OK);
@@ -33,7 +33,7 @@ public class ProductController {
     }
     //modificar el producto
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct (@PathVariable Long id, @RequestBody Product product){
+    public ResponseEntity<?> updateProduct (@PathVariable (name="id") long id, @RequestBody Product product){
         Optional<Product> OptionalProduct = productRepository.findById(id);
         if(OptionalProduct.isPresent()){
             product.setId(id);
@@ -53,7 +53,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable Long id){
+    public ResponseEntity<?> deleteProduct(@PathVariable (name="id") long id){
         Optional<Product> OptionalProduct = productRepository.findById(id);
         if(OptionalProduct.isPresent()){
             productRepository.deleteById(id);

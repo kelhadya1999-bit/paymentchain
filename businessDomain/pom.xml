@@ -26,30 +26,31 @@
     <properties>
 <!--        <spring-cloud-dependencies.version>2023.0.0</spring-cloud-dependencies.version>-->
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
-        <org.lombo.version>1.18.30</org.lombo.version>
+<!--        <org.lombo.version>1.18.30</org.lombo.version>-->
+        <org.lombok.version>1.18.30</org.lombok.version>
         <org.springdoc.version>2.3.0</org.springdoc.version>
         <org.mockito.version>5.7.0</org.mockito.version>
         <java.version>21</java.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+<!--    <dependencyManagement>-->
+<!--        <dependencies>-->
 <!--            <dependency>-->
-<!--                <groupId>org.springframework.cloud</groupId>-->
-<!--                <artifactId>spring-cloud-dependencies</artifactId>-->
-<!--                <version>${spring-cloud-dependencies.version}</version>-->
+<!--                <groupId>org.springframework.boot</groupId>-->
+<!--                <artifactId>spring-boot-dependencies</artifactId>-->
+<!--                <version>${spring-boot.version}</version>-->
 <!--                <type>pom</type>-->
 <!--                <scope>import</scope>-->
 <!--            </dependency>-->
-        </dependencies>
-    </dependencyManagement>
+<!--&lt;!&ndash;            <dependency>&ndash;&gt;-->
+<!--&lt;!&ndash;                <groupId>org.springframework.cloud</groupId>&ndash;&gt;-->
+<!--&lt;!&ndash;                <artifactId>spring-cloud-dependencies</artifactId>&ndash;&gt;-->
+<!--&lt;!&ndash;                <version>${spring-cloud-dependencies.version}</version>&ndash;&gt;-->
+<!--&lt;!&ndash;                <type>pom</type>&ndash;&gt;-->
+<!--&lt;!&ndash;                <scope>import</scope>&ndash;&gt;-->
+<!--&lt;!&ndash;            </dependency>&ndash;&gt;-->
+<!--        </dependencies>-->
+<!--    </dependencyManagement>-->
 
     <build>
         <plugins>
