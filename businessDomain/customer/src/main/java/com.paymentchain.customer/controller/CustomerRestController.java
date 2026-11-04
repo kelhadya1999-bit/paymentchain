@@ -1,77 +1,50 @@
 package com.paymentchain.customer.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.paymentchain.customer.Repository.CustomerRepository;
+import com.paymentchain.customer.businessTransaction.BusinessTransaction;
 import com.paymentchain.customer.entities.Customer;
-
 import com.paymentchain.customer.entities.CustomerProduct;
-import com.paymentchain.customer.entities.TransactionDTO;
-import com.paymentchain.customer.entities.productDTO;
-import io.netty.channel.ChannelOption;
-//import io.netty.handler.codec.quic.EpollQuicUtils;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
-//import org.springframework.core.env.Environment;
-import lombok.ToString;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.*;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.netty.http.client.HttpClient;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 
 @RestController
-@RequestMapping("/customer")
+@RequestMapping("/customer/V1")
 public class CustomerRestController {
+
     private final CustomerRepository customerRepository;
-    private final WebClient.Builder webClientBuilder; // el bean @LoadBalanced de CustomerApplication
+    private final BusinessTransaction businessTransaction;
     private final Environment env;
 
     // Un solo constructor: Spring inyecta todo sin necesidad de @Autowired
     public CustomerRestController(CustomerRepository customerRepository,
-                                  @Qualifier("getWebClientBuilder") WebClient.Builder webClientBuilder,
+                                  BusinessTransaction businessTransaction,
                                   Environment env) {
         this.customerRepository = customerRepository;
-        this.webClientBuilder = webClientBuilder;
+        this.businessTransaction = businessTransaction;
         this.env = env;
     }
 
-    //configuración del time out
-    HttpClient client = HttpClient.create()
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-            .option(ChannelOption.SO_KEEPALIVE, true)
-            .responseTimeout(Duration.ofSeconds(1))
-            .doOnConnected(conn -> {
-                conn.addHandlerLast( new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
-                conn.addHandlerLast( new WriteTimeoutHandler(5000, TimeUnit.MILLISECONDS));
-            });
-
-    //los parámetros de webclient se definen en unaclase própia
     @GetMapping
     public List<Customer> FindAll() {
         return (List<Customer>) customerRepository.findAll();
     }
-    //private Environment env;
+
     @GetMapping("/check")
-    public String check(){
+    public String check() {
         return "app=" + env.getProperty("spring.application.name")
                 + ", profile=" + env.getProperty("custom.activeProfileName")
                 + ", port=" + env.getProperty("server.port");
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> FindOne(@PathVariable (name="id") long id) {
+    public ResponseEntity<?> FindOne(@PathVariable(name = "id") long id) {
         Optional<Customer> customer = customerRepository.findById(id);
         if (customer.isPresent()) {
             return ResponseEntity.ok().body(customer.get());
@@ -81,7 +54,7 @@ public class CustomerRestController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> put(@PathVariable (name="id") long id, @RequestBody Customer input) {
+    public ResponseEntity<?> put(@PathVariable(name = "id") long id, @RequestBody Customer input) {
         Optional<Customer> customer1 = customerRepository.findById(id);
         if (customer1.isPresent()) {
             Customer newCustomer = customer1.get();
@@ -90,27 +63,23 @@ public class CustomerRestController {
             Customer save = customerRepository.save(newCustomer);
             return ResponseEntity.ok(save);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se ha encontrado ningun cliente con el id: "
-                    + id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No se ha encontrado ningun cliente con el id: " + id);
         }
     }
 
     @PostMapping
     public ResponseEntity<?> post(@RequestBody Customer customer) {
-        //customer.getProducts().forEach(x -> x.setCustomer(customer));
-        //Customer save = customerRepository.save(customer);
-       // return ResponseEntity.ok(save);
-        // Asegurarte de que cada producto apunte al customer
+        // Asegurar que cada producto apunte al customer
         if (customer.getProducts() != null) {
             customer.getProducts().forEach(p -> p.setCustomer(customer));
         }
-
         Customer saved = customerRepository.save(customer);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable (name="id") long id) {
+    public ResponseEntity<?> delete(@PathVariable(name = "id") long id) {
         Optional<Customer> customer = customerRepository.findById(id);
         if (customer.isPresent()) {
             customerRepository.deleteById(id);
@@ -126,56 +95,14 @@ public class CustomerRestController {
                         HttpStatus.NOT_FOUND,
                         "Customer with id " + id + " not found"));
 
-        // Producto de cada línea del cliente
+        // Nombre del producto de cada línea del cliente (llamada al microservicio Product)
         List<CustomerProduct> products = customer.getProducts();
         if (products != null) {
-            products.forEach(cp -> cp.setProductName(getProductName(cp.getProductId())));
+            products.forEach(cp -> cp.setProductName(businessTransaction.getProductName(cp.getProductId())));
         }
 
-        // Transacciones del cliente
-        customer.setTransactions(getTransactions(customer.getIban()));
+        // Transacciones del cliente (llamada al microservicio Transactions)
+        customer.setTransactions(businessTransaction.getTransactions(customer.getIban()));
         return customer;
-    }
-
-
-    private String getProductName (long id) {
-        //crear la url para acceder a los productos del cliente
-        WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://BUISNESSDOMAIN-PRODUCT/Product")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url","http://BUISNESSDOMAIN-PRODUCT/Product"))
-                .build();
-
-        //poder acceder a la url del producte con su id y devuelva el json con la info
-        //La clase productDTO Su único propósito es recibir o enviar datos entre sistemas
-        //DTO te permite mapear la respuesta JSON de Product a un objeto Java temporal en memoria, sin tocar la base de datos.
-        productDTO product = build.get()
-                .uri("/{id}", id)
-                .retrieve()
-                .bodyToMono(productDTO.class)
-                .onErrorResume(e -> reactor.core.publisher.Mono.empty())
-                .block();
-
-        return product != null ? product.getName() : null;
-    }
-    private List<?> getTransactions(String iban){
-        WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://BUISNESSDOMAIN-TRANSACTION/transaction")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url","http://BUISNESSDOMAIN-TRANSACTION/transaction"))
-                .build();
-
-
-        List<TransactionDTO> transactions = build.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/customer/transactions") // asegúrate del endpoint correcto
-                        .queryParam("ibanAccount", iban)
-                        .build())
-                .retrieve()
-                .bodyToFlux(TransactionDTO.class)  // mapear directamente a Transaction
-                .collectList()
-                .block();
-
-        return transactions;
     }
 }
