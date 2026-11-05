@@ -26,9 +26,9 @@ public class ProductController {
     public ResponseEntity<?> findById(@PathVariable (name="id") long id){
         Optional<Product> OptionalProduct = productRepository.findById(id);
         if(OptionalProduct.isPresent()){
-            return new ResponseEntity<>(OptionalProduct.get(), HttpStatus.OK);
+            return  ResponseEntity.ok(OptionalProduct);
         }else{
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return  ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
     //modificar el producto
