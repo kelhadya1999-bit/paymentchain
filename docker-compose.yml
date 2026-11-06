@@ -1,0 +1,79 @@
+services:
+  registry-discovery:
+    container_name: registry-discovery
+    image: eureka_image:latest        # <- cambia por el nombre real de la imagen de eurekaServer
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+    ports:
+      - "8761:8761"
+
+  productCatalog:
+    container_name: db-product-catalog
+    image: product_image:latest
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+      # Lo lee el application.properties: eureka.client.service-url.defaultZone=${EUREKA_SERVER:...}
+      EUREKA_SERVER: http://registry-discovery:8761/eureka/
+    depends_on:
+      - registry-discovery
+    ports:
+      - "8082:8082"
+
+  customer:
+    container_name: db-customer
+    image: customer_image:latest
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+      EUREKA_SERVER: http://registry-discovery:8761/eureka/
+      # Estas tres variables sustituyen a spring.datasource.* del application.properties
+      # (dentro de Docker la base de datos NO está en localhost, sino en el servicio postgres_db)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db:5432/customer
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin1
+    depends_on:
+      registry-discovery:
+        condition: service_started
+      postgres_db:
+        condition: service_healthy     # espera a que postgres acepte conexiones
+    ports:
+      - "8080:8080"
+
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin1
+      # No se define POSTGRES_DB: la base "customer" la crea el script de inicialización
+    ports:
+      - "5432:5432"
+    volumes:
+      # Script de inicialización: se ejecuta solo la primera vez, con el volumen de datos vacío
+      - ./dbfiles:/docker-entrypoint-initdb.d:ro
+      # Volumen con los datos de postgres (persisten aunque borres el contenedor)
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d customer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin1
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  pgadmin_data:
