@@ -44,6 +44,12 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+
+            <!-- ... other dependency elements ... -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-security</artifactId>
+            </dependency>
         <!--Gives us the ability to quickly setup and run services
         Property Defaults,Automatic Restart,Live Reload,Global Settings,Remote Applications for debug example via http-->
         <dependency>
@@ -84,6 +90,7 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
         <plugins>
             <!--Tghis plugin generate reports in two differents forma .txt and xml
             in test phase when build life cicle is execuite-->
@@ -109,28 +116,33 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--   <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>dockerfile-maven-plugin</artifactId>
-                <version>${dockerfile-maven-version}</version>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.43.4</version>
+                <configuration>
+                    <images>
+                        <image>
+                            <name>paymentchain/${project.artifactId}:${project.version}</name>
+                            <build>
+                                <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                                <args>
+                                    <JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE>
+                                </args>
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
                 <executions>
                     <execution>
                         <id>build-docker-image</id>
                         <phase>package</phase>
                         <goals>
                             <goal>build</goal>
-                           <goal>push</goal>
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <repository>digitalthinking/microservice-docker-${project.artifactId}</repository>
-                    <tag>${project.version}</tag>
-                    <buildArgs>
-                        <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
-                    </buildArgs>
-                </configuration>
-            </plugin>-->
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -148,6 +160,7 @@
                 </configuration>
             </plugin>
         </plugins>
+        </pluginManagement>
     </build>
     <modules>
         <module>businessDomain</module>

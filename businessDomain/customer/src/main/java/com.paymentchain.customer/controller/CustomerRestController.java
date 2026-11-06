@@ -4,14 +4,11 @@ import com.paymentchain.customer.Repository.CustomerRepository;
 import com.paymentchain.customer.businessTransaction.BusinessRuleException;
 import com.paymentchain.customer.businessTransaction.BusinessTransaction;
 import com.paymentchain.customer.entities.Customer;
-import com.paymentchain.customer.entities.CustomerProduct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ResolvableType;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.net.UnknownHostException;
 import java.util.List;
