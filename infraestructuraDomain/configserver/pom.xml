@@ -14,6 +14,11 @@
     <artifactId>configserver</artifactId>
     <version>1.0.0</version>
 
+    <properties>
+        <!-- Spring Boot Admin 3.2.x es la línea compatible con Spring Boot 3.2.x -->
+        <spring-boot-admin.version>3.2.3</spring-boot-admin.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -21,4 +26,13 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+            </plugin>
+        </plugins>
+    </build>
 </project>

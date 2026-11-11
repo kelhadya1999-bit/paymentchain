@@ -1,32 +1,47 @@
 services:
   registry-discovery:
     container_name: registry-discovery
-    image: eureka_image:latest        # <- cambia por el nombre real de la imagen de eurekaServer
+    image: eureka_image:latest
     environment:
       JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
     ports:
       - "8761:8761"
+
+  apigateway:
+    container_name: apigateway
+    image: apigateway_image:latest
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+      EUREKA_SERVER: http://admin:admin@registry-discovery:8761/eureka/
+    depends_on:
+      - registry-discovery
+    ports:
+      - "8090:8090"
 
   productCatalog:
     container_name: db-product-catalog
     image: product_image:latest
     environment:
       JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
-      # Lo lee el application.properties: eureka.client.service-url.defaultZone=${EUREKA_SERVER:...}
-      EUREKA_SERVER: http://registry-discovery:8761/eureka/
+      EUREKA_SERVER: http://admin:admin@registry-discovery:8761/eureka/
     depends_on:
       - registry-discovery
-    ports:
-      - "8082:8082"
+
+  transaction:
+    container_name: db-transaction
+    image: transaction_image:latest
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+      EUREKA_SERVER: http://admin:admin@registry-discovery:8761/eureka/
+    depends_on:
+      - registry-discovery
 
   customer:
     container_name: db-customer
     image: customer_image:latest
     environment:
       JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
-      EUREKA_SERVER: http://registry-discovery:8761/eureka/
-      # Estas tres variables sustituyen a spring.datasource.* del application.properties
-      # (dentro de Docker la base de datos NO está en localhost, sino en el servicio postgres_db)
+      EUREKA_SERVER: http://admin:admin@registry-discovery:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres_db:5432/customer
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: admin1
@@ -34,9 +49,30 @@ services:
       registry-discovery:
         condition: service_started
       postgres_db:
-        condition: service_healthy     # espera a que postgres acepte conexiones
+        condition: service_healthy
+
+  configserver:
+    container_name: config-server
+    image: configserver_image:latest
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+      EUREKA_SERVER: http://admin:admin@registry-discovery:8761/eureka/
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: file:///config-repo
+    volumes:
+      - ./configServerRepo:/config-repo
+    depends_on:
+      - registry-discovery
+
+  springbootadmin:
+    container_name: spring-boot-admin
+    image: springbootadmin_image:latest
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+      EUREKA_SERVER: http://admin:admin@registry-discovery:8761/eureka/
+    depends_on:
+      - registry-discovery
     ports:
-      - "8080:8080"
+      - "8084:8084"
 
   postgres_db:
     image: postgres:16-alpine

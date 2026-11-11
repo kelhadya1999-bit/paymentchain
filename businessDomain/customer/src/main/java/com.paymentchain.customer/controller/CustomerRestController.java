@@ -41,7 +41,7 @@ public class CustomerRestController {
     public String check() {
         return "app=" + env.getProperty("spring.application.name")
                 + ", profile=" + env.getProperty("custom.activeProfileName")
-                + ", port=" + env.getProperty("server.port");
+                + ", port=" + env.getProperty("local.server.port");
     }
 
     @GetMapping("/{id}")

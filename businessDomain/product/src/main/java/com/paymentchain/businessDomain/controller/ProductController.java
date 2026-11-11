@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/Product")
+@RequestMapping("/product")
 public class ProductController {
     //inyección por repositorio, utilizar métodos JPA con el objeto
     @Autowired

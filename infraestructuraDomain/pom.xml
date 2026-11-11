@@ -22,6 +22,7 @@
         <module>configserver</module>
         <module>eurekaServer</module>
         <module>springBootAdmin</module>
+        <module>apiGateway</module>
     </modules>
 
     <properties>

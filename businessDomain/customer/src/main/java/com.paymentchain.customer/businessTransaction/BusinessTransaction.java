@@ -70,7 +70,7 @@ public class BusinessTransaction {
         try {
             WebClient build = webClientBuilder.clone()
                     .clientConnector(new ReactorClientHttpConnector(client))
-                    .baseUrl("http://BUISNESSDOMAIN-PRODUCT/Product")
+                    .baseUrl("http://BUISNESSDOMAIN-PRODUCT/product/product")
                     .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .build();
 
@@ -94,7 +94,7 @@ public class BusinessTransaction {
     public List<TransactionDTO> getTransactions(String iban) {
         WebClient build = webClientBuilder.clone()
                 .clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://BUISNESSDOMAIN-TRANSACTION/transaction")
+                .baseUrl("http://BUISNESSDOMAIN-TRANSACTION/transaction/transaction")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
 

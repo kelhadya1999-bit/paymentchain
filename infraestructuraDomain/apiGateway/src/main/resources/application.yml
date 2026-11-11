@@ -16,7 +16,7 @@ spring:
         - id: product_service
           uri: lb://buisnessdomain-product
           predicates:
-            - Path=/Product/**
+            - Path=/product/**
         - id: transaction_service
           uri: lb://buisnessdomain-transaction
           predicates:

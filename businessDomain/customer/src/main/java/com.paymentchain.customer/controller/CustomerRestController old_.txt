@@ -141,7 +141,7 @@ public class CustomerRestController {
     private String getProductName (long id) {
         //crear la url para acceder a los productos del cliente
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://BUISNESSDOMAIN-PRODUCT/Product")
+                .baseUrl("http://BUISNESSDOMAIN-PRODUCT/product/product")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultUriVariables(Collections.singletonMap("url","http://BUISNESSDOMAIN-PRODUCT/Product"))
                 .build();
@@ -160,7 +160,7 @@ public class CustomerRestController {
     }
     private List<?> getTransactions(String iban){
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://BUISNESSDOMAIN-TRANSACTION/transaction")
+                .baseUrl("http://BUISNESSDOMAIN-TRANSACTION/transaction/transaction")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultUriVariables(Collections.singletonMap("url","http://BUISNESSDOMAIN-TRANSACTION/transaction"))
                 .build();
