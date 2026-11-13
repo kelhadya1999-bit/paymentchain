@@ -1,6 +1,5 @@
 package com.paymentchain.customer.Common;
 
-//import jakarta.ws.rs.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -18,6 +17,7 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfiguration {
     private static final String[] NO_AUTH_LIST = {
+            "/error",
             "/v3/api-docs",
             "/v3/api-docs/**",
             "/configuration/ui",
@@ -46,6 +46,7 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(NO_AUTH_LIST).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/customer/V1/full").permitAll()      // <- nueva
                         .requestMatchers(HttpMethod.POST, "/customer/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/customer/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

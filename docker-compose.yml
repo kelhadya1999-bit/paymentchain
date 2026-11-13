@@ -18,6 +18,18 @@ services:
     ports:
       - "8090:8090"
 
+  keycloakadapter:
+    container_name: keycloak-adapter
+    image: keycloakadapter_image:latest
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256M -Xmx256M"
+      EUREKA_SERVER: http://admin:admin@registry-discovery:8761/eureka/
+      KEYCLOAK_SERVER: http://keycloakserver:8080/realms/
+      KEYCLOAK_REALM_ID: 6_Q7MFaUf8AEIaxZMQNZsy-QtXX_lujzsR2qX6bAzs8
+    depends_on:
+      - registry-discovery
+      - keycloakserver
+
   productCatalog:
     container_name: db-product-catalog
     image: product_image:latest
@@ -74,6 +86,20 @@ services:
     ports:
       - "8084:8084"
 
+  keycloakserver:
+    container_name: keycloak-server
+    image: quay.io/keycloak/keycloak:26.0.7
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8091
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "8091:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
   postgres_db:
     image: postgres:16-alpine
     container_name: postgres
@@ -113,3 +139,4 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  keycloak_data:

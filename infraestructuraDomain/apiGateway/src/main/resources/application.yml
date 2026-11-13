@@ -9,10 +9,17 @@ spring:
       enabled: false
     gateway:
       routes:
+        - id: customer_full
+          uri: lb://buisnessdomain-client
+          predicates:
+              - Path=/business/customer/V1/full
+          filters:
+              - AuthentificationFilter
         - id: customer_service
           uri: lb://buisnessdomain-client
           predicates:
             - Path=/business/**
+
         - id: product_service
           uri: lb://buisnessdomain-product
           predicates:
@@ -21,6 +28,10 @@ spring:
           uri: lb://buisnessdomain-transaction
           predicates:
             - Path=/transaction/**
+        - id: keycloak_adapter
+          uri: lb://keycloak-adapter
+          predicates:
+            - Path=/keycloak/**
 
 eureka:
   client:

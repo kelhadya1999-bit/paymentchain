@@ -23,6 +23,7 @@
         <module>eurekaServer</module>
         <module>springBootAdmin</module>
         <module>apiGateway</module>
+        <module>kaycloackAdapter</module>
     </modules>
 
     <properties>
